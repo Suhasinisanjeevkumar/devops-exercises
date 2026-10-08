@@ -1,0 +1,22 @@
+#include <tunables/global>
+
+profile my-apparmor-profile {
+    /usr/local/bin/python3.8 mr,
+    /usr/local/lib/** mr,
+    /lib/x86_64-linux-gnu/** mr,
+    /usr/lib/x86_64-linux-gnu/** mr,
+    /lib64/** mr,
+
+    /etc/ld.so.cache r,
+    /etc/ld.so.conf r,
+    /etc/ld.so.conf.d/** r,
+
+    /app/** rw,
+    network,
+    capability net_bind_service,
+
+    deny /etc/passwd r,
+    deny /var/** rw,
+    deny /bin/bash mr,
+    deny capability sys_admin,
+}
