@@ -1,0 +1,81 @@
+pipeline {
+    agent any
+
+    environment {
+        EXERCISE_DIR = 'Exercise-6-Real-Time-Operations-Monitoring-and-Alerting'
+        IMAGE_NAME = "delivery-metrics:exercise-6-${BUILD_NUMBER}"
+        NETWORK_NAME = "delivery-monitoring-${BUILD_NUMBER}"
+        APP_CONTAINER = "delivery-app-${BUILD_NUMBER}"
+        PROMETHEUS_CONTAINER = "prometheus-${BUILD_NUMBER}"
+        GRAFANA_CONTAINER = "grafana-${BUILD_NUMBER}"
+    }
+
+    stages {
+
+        stage('Pre-check Docker') {
+            steps {
+                sh '''
+                    docker --version
+                    docker info
+                '''
+            }
+        }
+
+        stage('Setup Workspace') {
+            steps {
+                sh '''
+                    test -f "$WORKSPACE/$EXERCISE_DIR/delivery_metrics.py"
+                    test -f "$WORKSPACE/$EXERCISE_DIR/prometheus.yml"
+                    test -f "$WORKSPACE/$EXERCISE_DIR/alert_rules.yml"
+                    test -f "$WORKSPACE/$EXERCISE_DIR/Dockerfile"
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker build \
+                        -t "$IMAGE_NAME" \
+                        "$WORKSPACE/$EXERCISE_DIR"
+                '''
+            }
+        }
+
+        stage('Run Application') {
+            steps {
+                sh '''
+                    docker network create "$NETWORK_NAME"
+
+                    docker run -d \
+                        --name "$APP_CONTAINER" \
+                        --network "$NETWORK_NAME" \
+                        --network-alias delivery-app \
+                        -p 8000:8000 \
+                        "$IMAGE_NAME"
+                '''
+            }
+        }
+
+        stage('Run Prometheus & Grafana') {
+            steps {
+                sh '''
+                    docker run -d \
+                        --name "$PROMETHEUS_CONTAINER" \
+                        --network "$NETWORK_NAME" \
+                        -p 9090:9090 \
+                        --mount "type=bind,source=$WORKSPACE/$EXERCISE_DIR/prometheus.yml,target=/etc/prometheus/prometheus.yml,readonly" \
+                        --mount "type=bind,source=$WORKSPACE/$EXERCISE_DIR/alert_rules.yml,target=/etc/prometheus/alert_rules.yml,readonly" \
+                        prom/prometheus:v2.54.1 \
+                        --config.file=/etc/prometheus/prometheus.yml
+
+                    docker run -d \
+                        --name "$GRAFANA_CONTAINER" \
+                        --network "$NETWORK_NAME" \
+                        -p 3000:3000 \
+                        grafana/grafana:11.2.0
+                '''
+            }
+        }
+    }
+}
