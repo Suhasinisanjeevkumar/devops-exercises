@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo 'Checkout completed.'
+            }
+        }
+
+        stage('Validate Files') {
+            steps {
+                sh '''
+                    set -eu
+                    for file in README.md Jenkinsfile hello.sh test_hello.sh; do
+                        if [ ! -f "$file" ]; then
+                            echo "FAIL: Required file is missing: $file" >&2
+                            exit 1
+                        fi
+                    done
+                    echo 'PASS: All required files are present.'
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'sh ./test_hello.sh'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'SUCCESS: Exercise 7 pipeline completed successfully.'
+        }
+        failure {
+            echo 'FAILURE: Exercise 7 pipeline failed. Review the stage output above.'
+        }
+    }
+}
