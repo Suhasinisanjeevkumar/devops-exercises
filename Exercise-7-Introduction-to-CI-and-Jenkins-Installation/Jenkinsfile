@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        EXERCISE_DIR = 'Exercise-7-Introduction-to-CI-and-Jenkins-Installation'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -11,22 +15,26 @@ pipeline {
 
         stage('Validate Files') {
             steps {
-                sh '''
-                    set -eu
-                    for file in README.md Jenkinsfile hello.sh test_hello.sh; do
-                        if [ ! -f "$file" ]; then
-                            echo "FAIL: Required file is missing: $file" >&2
-                            exit 1
-                        fi
-                    done
-                    echo 'PASS: All required files are present.'
-                '''
+                dir(env.EXERCISE_DIR) {
+                    sh '''
+                        set -eu
+                        for file in README.md hello.sh test_hello.sh; do
+                            if [ ! -f "$file" ]; then
+                                echo "FAIL: Required file is missing: $file" >&2
+                                exit 1
+                            fi
+                        done
+                        echo 'PASS: All required files are present.'
+                    '''
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'sh ./test_hello.sh'
+                dir(env.EXERCISE_DIR) {
+                    sh 'sh ./test_hello.sh'
+                }
             }
         }
     }
