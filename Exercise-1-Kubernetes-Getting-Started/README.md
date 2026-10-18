@@ -50,3 +50,7 @@ Deploy an Nginx application as a Kubernetes Pod using Minikube and expose it usi
 
 minikube start --driver=docker --cpus=2 --memory=2048
 
+
+## Progress Update
+
+Documentation reviewed and updated on 18 October 2026. This exercise covers deploying Nginx as a Kubernetes Pod and exposing it through a NodePort Service using Minikube.
